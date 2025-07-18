@@ -131,6 +131,18 @@ void my_RCC_ADC1_CLK_ENABLE()	{writeRCC(8, RCC_APB2_ENR, SET);}
 void my_RCC_ADC1_CLK_DISABLE()	{writeRCC(8, RCC_APB2_ENR, RESET);}
 
 
+/*
+ * ------------------------------------------
+ * Peripheral Clock Helper - DMA1 DMA2
+ * ------------------------------------------
+ */
+void my_RCC_DMA2_CLK_ENABLE() 	{writeRCC(22, RCC_AHB1_ENR, SET);}
+void my_RCC_DMA2_CLK_DISABLE() 	{writeRCC(22, RCC_AHB1_ENR, RESET);}
+
+void my_RCC_DMA1_CLK_ENABLE() 	{writeRCC(21, RCC_AHB1_ENR, SET);}
+void my_RCC_DMA1_CLK_DISABLE() 	{writeRCC(21, RCC_AHB1_ENR, RESET);}
+
+
 
 /*
  * ---------------------------------------

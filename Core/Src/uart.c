@@ -134,6 +134,15 @@ static int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_
  * Public API
  * ------------------------------------------------------------
  */
+void UART_DMA_Init(){
+	/*
+	 * According to DMA2 request mapping
+	 * 		Choose Stream 2, channel 4 for UART1_RX
+	 */
+	my_RCC_DMA2_CLK_ENABLE();
+	uint32_t* DMA_S2M0AR = (uint32_t*) (DMA2_BASE_ADDR + 0x1C + 0x18 * 2);
+}
+
 void UART_Init(GPIO_Pin_t TXPin,
 			   GPIO_Pin_t RXPin,
 			   GPIO_PortName_t portName,
@@ -210,6 +219,12 @@ void UART_Init(GPIO_Pin_t TXPin,
 	}else{
 		return;
 	}
+
+	/*
+	 * Enable UART DMA
+	 */
+	writeUART(6, uartName, UART_CR3, SET); //DMA Enable Transmitter
+	writeUART(7, uartName, UART_CR3, SET); //DMA Enable Receiver
 
 	writeUART(13, uartName, UART_CR1, 1); //Enable UART
 }
