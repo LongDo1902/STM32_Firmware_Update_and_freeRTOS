@@ -1,7 +1,8 @@
 /*
  * @brief	uart.c
  *
- * 	Created on: July 18, 2025
+ * 	Created on: Apr 23, 2025
+ * 	Enhanced on: July 18, 2025
  * 		Author: dobao
  */
 
