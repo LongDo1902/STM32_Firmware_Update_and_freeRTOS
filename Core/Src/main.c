@@ -13,8 +13,9 @@
 
 int main(void){
 	RCC_init();
-	initTimer(my_TIM1);
+	initTimer(my_TIM1); //100MHz, 1 tick per 0.001s
 	ledBlueInit();
+
 	while(1){
 		ledControl(LED_BLUE, ON);
 		delay(1000);

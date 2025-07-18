@@ -900,28 +900,28 @@ void initTimer(TIM_Name_t userTIMx){
 	TIM_Cal_t timConfig;
 
 	switch(userTIMx){
-		case my_TIM1: my_RCC_TIM1_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM1: my_RCC_TIM1_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 
-		case my_TIM2: my_RCC_TIM2_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFFFFFF);
+		case my_TIM2: my_RCC_TIM2_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFFFFFF);
 			break;
 
-		case my_TIM3: my_RCC_TIM3_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM3: my_RCC_TIM3_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 
-		case my_TIM4: my_RCC_TIM4_CLK_ENABLE();	timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM4: my_RCC_TIM4_CLK_ENABLE();	timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 
-		case my_TIM5: my_RCC_TIM5_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFFFFFF);
+		case my_TIM5: my_RCC_TIM5_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFFFFFF);
 			break;
 
-		case my_TIM9: my_RCC_TIM9_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM9: my_RCC_TIM9_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 
-		case my_TIM10: my_RCC_TIM10_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM10: my_RCC_TIM10_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 
-		case my_TIM11: my_RCC_TIM11_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, 1000, 0xFFFF);
+		case my_TIM11: my_RCC_TIM11_CLK_ENABLE(); timConfig = timerCalculation(SYSCLK_FREQ_100M, TICK_FREQ_1000Hz, 0xFFFF);
 			break;
 		default: return;
 	}
@@ -930,7 +930,6 @@ void initTimer(TIM_Name_t userTIMx){
 	writeTimer(0, userTIMx, TIM_ARR, timConfig.arr);
 	writeTimer(0, userTIMx, TIM_DIER, SET); //DMA Interrupt Enable
 	NVIC_enableIRQ(TIM1_UP_TIM10); //Enable interrupt at IRQ 25
-
 	writeTimer(0, userTIMx, TIM_CR1, SET); //Counter enabled
 }
 

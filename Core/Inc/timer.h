@@ -34,6 +34,7 @@
 
 #define _1MS_PER_TICK	0.001	//1msec per tick
 #define _5MS_PER_TICK	0.005	//5msec per tick
+#define _1S_PER_TICK	1		//1sec per tick
 
 #define TICK_FREQ_1000Hz	1/_1MS_PER_TICK //1ms per period
 #define TICK_FREQ_200Hz		1/_5MS_PER_TICK //5ms per period
