@@ -29,8 +29,8 @@
  * Clock Parameters Definitions
  * --------------------------------------------------
  */
-#define SYSCLK_FREQ_16M		16000000	//16MHz SYSCLK Freq
-#define SYSCLK_FREQ_100M	100000000 	//100MHz SYSCLK Freq
+#define SYSCLK_FREQ_16M		16000000UL	//16MHz SYSCLK Freq
+#define SYSCLK_FREQ_100M	100000000UL 	//100MHz SYSCLK Freq
 
 #define _1MS_PER_TICK	0.001	//1msec per tick
 #define _5MS_PER_TICK	0.005	//5msec per tick
