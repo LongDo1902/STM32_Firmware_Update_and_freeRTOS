@@ -139,7 +139,10 @@ void UART_DMA_Init(){
 	 * According to DMA2 request mapping
 	 * 		Choose Stream 2, channel 4 for UART1_RX
 	 */
-	my_RCC_DMA2_CLK_ENABLE();
+	my_RCC_DMA2_CLK_ENABLE(); //Enabling clock for dma
+	/* Assign the address of sender which is UART_DR*/
+	volatile uint32_t* peripheralAddr = ((uint32_t*) UART1_GET_REG(UART_DR));
+	writeDMA2(0, DMA_S2PAR, peripheralAddr);
 
 }
 
