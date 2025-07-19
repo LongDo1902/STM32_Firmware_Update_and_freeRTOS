@@ -78,10 +78,10 @@ typedef enum {
 	DMA_REG_COUNT
 }DMA_RegName_t;
 
-typedef enum{
-	DMA2,
-	DMA1
-}DMAx_t;
-
+/*
+ * Function Declarations
+ */
+void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value);
+uint32_t readDMA2(uint8_t bitPosition, DMA_RegName_t regName);
 
 #endif /* INC_DMA_H_ */

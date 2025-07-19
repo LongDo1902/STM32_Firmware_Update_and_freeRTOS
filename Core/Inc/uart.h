@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "rcc.h"
 #include "gpioWriteRead.h"
+#include "dma.h"
 
 typedef enum{
 	UART_SR,

@@ -6,6 +6,7 @@
  * 			1kHz system tick using TIM1 + IRQ 25(TIM1_UP_TIM10)
  *
  *  Created on: Jun 20, 2025
+ *  Updated on: Jul 18, 2025
  *      Author: dobao
  */
 

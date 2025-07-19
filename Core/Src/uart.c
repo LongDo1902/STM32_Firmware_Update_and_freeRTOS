@@ -2,7 +2,7 @@
  * @brief	uart.c
  *
  * 	Created on: Apr 23, 2025
- * 	Enhanced on: July 18, 2025
+ * 	Updated on: Jul 18, 2025
  * 		Author: dobao
  */
 
@@ -140,8 +140,9 @@ void UART_DMA_Init(){
 	 * 		Choose Stream 2, channel 4 for UART1_RX
 	 */
 	my_RCC_DMA2_CLK_ENABLE();
-	uint32_t* DMA_S2M0AR = (uint32_t*) (DMA2_BASE_ADDR + 0x1C + 0x18 * 2);
+
 }
+
 
 void UART_Init(GPIO_Pin_t TXPin,
 			   GPIO_Pin_t RXPin,

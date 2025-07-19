@@ -308,6 +308,40 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			else if(bitPosition == 3) bitWidth = 3;
 			break;
 
+		//------------------------------------------------//
+		case DMA_S3CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S3NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S3PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+
+
 		//...
 
 		default: return;
@@ -315,6 +349,178 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 
 	volatile uint32_t* reg = dma2RegLookupTable[regName];
 	writeDMABits(reg, bitPosition, bitWidth, value);
+}
+
+/*
+ * @brief	Read a bit-field from an DMA2 peripheral register
+ *
+ * @param	bitPosition		The LSB index of the field (0-31)
+ * @param	mode			Which register of DMA2 to access (enum @ref DMA_regName_t)
+ *
+ * @param	value			The value to write. There is a helper function to check if
+ * 							@p value fits into the target field width; if it does not,
+ * 							the call ignore
+ *
+ * @return	The extracted field value on success.
+ * 			If the cal is invalid, the constant @c 0xFFFFFFFF is returned as an ERROR
+ */
+uint32_t readDMA2(uint8_t bitPosition, DMA_RegName_t regName){
+	uint32_t const ERROR = 0xFFFFFFFF;
+	uint8_t bitWidth = 1;
+
+	switch(regName){
+		case DMA_LISR:
+			break;
+
+		case DMA_HISR:
+			break;
+
+		case DMA_LIFCR:
+			break;
+
+		case DMA_HIFCR:
+			break;
+
+		case DMA_S0CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S0NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S0PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S0M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S0M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S0FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+
+		//------------------------------------------------//
+
+		case DMA_S1CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S1NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S1PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S1M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S1M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S1FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+
+		//------------------------------------------------//
+
+		case DMA_S2CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S2NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S2PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S2M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S2M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S2FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+
+		//------------------------------------------------//
+		case DMA_S3CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S3NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S3PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S3FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+
+			//...
+
+		default: return ERROR;
+	}
+
+	volatile uint32_t* reg = dma2RegLookupTable[regName];
+	return readDMABits(reg, bitPosition, bitWidth);
 }
 
 
