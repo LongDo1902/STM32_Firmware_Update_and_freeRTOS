@@ -11,13 +11,14 @@
 #include "exti.h"
 #include "led.h"
 #include "uart.h"
+#include "dma.h"
 
 int main(void){
 	RCC_init();
 	initTimer(my_TIM1); //100MHz, 1 tick per 0.001s
 	ledBlueInit();
 	ledRedInit();
-	UART_Init(my_GPIO_PIN_6, my_GPIO_PIN_7, my_GPIOB, my_UART1, 9600, PARITY_ODD, _9B_WORDLENGTH);
+	UART_Init(my_GPIO_PIN_6, my_GPIO_PIN_7, my_GPIOB, my_UART1, 9600, PARITY_ODD, _9B_WORDLENGTH, ENABLE_DMA);
 
 	while(1){
 //		my_UART_Transmit(my_UART1, 'a');

@@ -54,6 +54,11 @@ typedef enum{
 	INVALID_PORT
 }General_Status_t;
 
+typedef enum{
+	DISABLE_DMA,
+	ENABLE_DMA
+}Enable_DMA_t;
+
 /*
  * Function Declaration
  */
@@ -63,10 +68,13 @@ void UART_Init(GPIO_Pin_t TXPin,
 			   UART_Name_t uartName,
 			   uint32_t baudRate,
 			   UART_Parity_t parity,
-			   UART_WordLength_t wordLength);
+			   UART_WordLength_t wordLength,
+			   Enable_DMA_t enableDMA);
 
 void my_UART_Transmit(UART_Name_t UARTx, uint8_t inputData);
 
 int16_t my_UART_Receive(UART_Name_t uartName);
+
+void UART1_DMA_Init(uint16_t bufferSize);
 
 #endif /* INC_UART_H_ */

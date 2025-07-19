@@ -152,7 +152,7 @@ static void writeDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bi
 	 * 		The field would spill past bit 31
 	 */
 	if(bitWidth >= 32) return; //Prevent undefined behavior: 32-bit shift is invalid on 32-bit targets
-	if(value >= (1U << bitWidth)) return;
+	if(value > (1U << bitWidth)) return; //I think this is incorrect
 	if((bitWidth + bitPosition) > 32) return; //Prevent writing beyong 32-bit reg boundary
 
 	//Mask off the old bit and or with new bit
@@ -171,7 +171,7 @@ static void writeDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bi
  * @return	Extracted value
  */
 static uint32_t readDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth){
-	if(bitWidth == 32){
+	if(bitWidth == 31){
 		return (*reg >> bitPosition); //Full-word; no mask needed
 	}
 	uint32_t mask = (1U << bitWidth) - 1U;
@@ -224,15 +224,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S0PAR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S0M0AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S0M1AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S0FCR:
@@ -258,15 +258,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S1PAR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S1M0AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S1M1AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S1FCR:
@@ -292,15 +292,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S2PAR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S2M0AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S2M1AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S2FCR:
@@ -325,15 +325,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S3PAR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S3M0AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S3M1AR:
-			bitWidth = 32;
+			bitWidth = 31;
 			break;
 
 		case DMA_S3FCR:
