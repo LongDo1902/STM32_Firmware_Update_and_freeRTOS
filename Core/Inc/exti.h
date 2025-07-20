@@ -103,7 +103,7 @@ typedef enum{
  */
 void NVIC_enableIRQ(IRQn_Pos_t irqNumber);
 void NVIC_disableIRQ(IRQn_Pos_t irqNumber);
-void NVIC_writeIPR(IRQn_Pos_t irqNumber, uint8_t priority);
+void NVIC_setPriority(IRQn_Pos_t irqNumber, uint8_t priority);
 void writeEXTI(uint8_t bitPosition, EXTI_Mode_t mode, FlagStatus state);
 void EXTI_init(char bitPosition, EXTI_Trigger_t triggerMode, IRQn_Pos_t irqNumber);
 

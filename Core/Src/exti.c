@@ -46,7 +46,7 @@ void NVIC_disableIRQ(IRQn_Pos_t irqNumber){
  * @param	irqNumber	IRQ number (0-85)
  * @param	priority	Priority level (only upper 4 bits of 8-bit field are used)
  */
-void NVIC_writeIPR(IRQn_Pos_t irqNumber, uint8_t priority){
+void NVIC_setPriority(IRQn_Pos_t irqNumber, uint8_t priority){
 	if(irqNumber > 85) return;
 	NVIC_REG -> _IPR[irqNumber] = (priority & 0x0F) << 4; //Top 4 bits only are used
 }

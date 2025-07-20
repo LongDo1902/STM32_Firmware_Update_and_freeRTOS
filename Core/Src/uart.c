@@ -139,36 +139,42 @@ static int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_
  * Public API
  * ------------------------------------------------------------
  */
+static char rx_buffer[1];
 
-void UART1_DMA_Init(uint16_t bufferSize){
-	if (bufferSize == 0) return;
-	char rx_buffer[bufferSize];
+void UART1_DMA_Init(void){
 	/*
 	 * According to DMA2 request mapping
 	 * 		Choose Stream 2, channel 4 for UART1_RX
 	 */
-<<<<<<< HEAD
 	my_RCC_DMA2_CLK_ENABLE(); //Enabling clock for dma
+
 	/* Assign the address of sender which is UART_DR*/
-	volatile uint32_t* peripheralAddr = ((uint32_t*) UART1_GET_REG(UART_DR));
-	writeDMA2(0, DMA_S2PAR, peripheralAddr);
-=======
-	my_RCC_DMA2_CLK_ENABLE();
 	writeDMA2(0, DMA_S2PAR, (uint32_t)UART1_GET_REG(UART_DR)); //Write sender address to DMA_S2PAR
 	writeDMA2(0, DMA_S2M0AR, (uint32_t)rx_buffer); //Write receiver address to DMA_S2M0AR
 	writeDMA2(0, DMA_S2NDTR, sizeof(rx_buffer)); //Let DMA knows the size of the transfered package
+//	writeDMA2(0, DMA_S2NDTR, 1);
+
 	writeDMA2(25, DMA_S2CR, 0b100); //Select channel 4
 	writeDMA2(11, DMA_S2CR, 0b00); //Set data size is 8-bit
 	writeDMA2(10, DMA_S2CR, SET); //Set memory increment mode
 	writeDMA2(8, DMA_S2CR, SET); //Enable circular mode
 	writeDMA2(4, DMA_S2CR, SET); //Enable transfer complete interrupt
 	writeDMA2(0, DMA_S2CR, SET); //Enable Stream 2
-}
->>>>>>> ad9449d (Update DMA)
 
-void DMA2_Stream2_IRQHandler(){
-	writeDMA2(21, DMA_LISR, SET); //Clear the interrupt flag by writing 1
+	NVIC_enableIRQ(DMA2_S2);
 }
+
+
+void DMA2_Stream2_IRQHandler(void){
+	char c = rx_buffer[0];
+	if(c == 'b'){
+		ledControl(LED_ORANGE, ON);
+		for(int i = 0; i < 2000000; i++);
+		ledControl(LED_ORANGE, OFF);
+	}
+	writeDMA2(21, DMA_LIFCR, SET); //Clear TCIF2
+}
+
 
 
 void UART_Init(GPIO_Pin_t TXPin,
@@ -253,13 +259,20 @@ void UART_Init(GPIO_Pin_t TXPin,
 	 * Enable UART DMA
 	 */
 	if(enableDMA == ENABLE_DMA){
-		writeUART(6, uartName, UART_CR3, SET); //DMA Enable Transmitter
-		UART1_DMA_Init(32); //32 is data number/size
+//		writeUART(6, uartName, UART_CR3, SET); //DMA Enable Transmitter
+		writeUART(6, uartName, UART_CR3, SET);
+		UART1_DMA_Init(); //100 is data number/size
+	}
+
+	else if (enableDMA == DISABLE_DMA){
+		/*
+		 * Enable interrupt
+		 */
+		writeUART(5, my_UART1, UART_CR1, SET); //Receive interrupt enable
+		NVIC_enableIRQ(UART1); //Position 37 in vector table
 	}
 
 	writeUART(13, uartName, UART_CR1, 1); //Enable UART
-
-
 }
 
 
@@ -316,8 +329,23 @@ int16_t my_UART_Receive(UART_Name_t uartName){
 	return data;
 }
 
-void printLog(char* message){
 
+/*
+ * @brief	Send a zero-terminated ASCII string over the selected UART port
+ *
+ * @param	uartName	UART peripheral (example: my_UART1, my_UART2, and my_UART6)
+ * @param	message		Pointer to a C-string that ends with '\0'
+ *
+ * @note!	The routine is blocking: it waits inside my_UART_Transmit()
+ * 			until each byte has physically left the shift register.
+ * 			For short status messages that is fine; for large logs consider
+ * 			an IRQ or DMA-drivin Tx buffer so the CPU can do other work.
+ */
+void uartPrintLog(UART_Name_t uartName, char* message){
+	int messageLength = strlen(message);
+	for(short i = 0; i < messageLength; i++){
+		my_UART_Transmit(uartName, message[i]);
+	}
 }
 
 

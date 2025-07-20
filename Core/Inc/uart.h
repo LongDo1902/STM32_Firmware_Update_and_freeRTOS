@@ -8,6 +8,8 @@
 #ifndef INC_UART_H_
 #define INC_UART_H_
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "stm32PeripheralAddr.h"
@@ -15,6 +17,8 @@
 #include "rcc.h"
 #include "gpioWriteRead.h"
 #include "dma.h"
+#include "exti.h"
+#include "led.h"
 
 typedef enum{
 	UART_SR,
@@ -72,9 +76,8 @@ void UART_Init(GPIO_Pin_t TXPin,
 			   Enable_DMA_t enableDMA);
 
 void my_UART_Transmit(UART_Name_t UARTx, uint8_t inputData);
-
 int16_t my_UART_Receive(UART_Name_t uartName);
-
-void UART1_DMA_Init(uint16_t bufferSize);
+void UART1_DMA_Init(void);
+void uartPrintLog(UART_Name_t uartName, char* message);
 
 #endif /* INC_UART_H_ */
