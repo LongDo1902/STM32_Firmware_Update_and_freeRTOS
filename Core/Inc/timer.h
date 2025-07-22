@@ -111,6 +111,7 @@ typedef struct{
 	uint32_t psc;	//Prescaler value
 	uint32_t arr;	//Auto-reload Value
 	uint32_t actualHz;	//Achieved frequency
+	uint32_t error; //An error status
 }TIM_Cal_t;
 
 

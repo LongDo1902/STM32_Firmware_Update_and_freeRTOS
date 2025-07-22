@@ -28,29 +28,32 @@ static inline volatile uartRegOffset_t* uartBase(UART_Name_t uartName){
 	}
 }
 
-/* Enable UARTs' Clock */
-static inline UART_Status_t enableUartClock(UART_Name_t uartName){
-	switch(uartName){
-		case my_UART1: my_RCC_USART1_CLK_ENABLE(); break;
-		case my_UART2: my_RCC_USART2_CLK_ENABLE(); break;
-		case my_UART6: my_RCC_USART6_CLK_ENABLE(); break;
-		default: return UART_NOT_OK;
-	}
-	return UART_OK;
-}
+
 
 /* Enable GPIOs' Clock */
 static inline General_Status_t enableGpioClock(GPIO_PortName_t port){
 	switch(port){
-		case my_GPIOA: my_RCC_GPIOA_CLK_ENABLE(); break;
-		case my_GPIOB: my_RCC_GPIOB_CLK_ENABLE(); break;
-		case my_GPIOC: my_RCC_GPIOC_CLK_ENABLE(); break;
-		case my_GPIOD: my_RCC_GPIOD_CLK_ENABLE(); break;
-		case my_GPIOE: my_RCC_GPIOE_CLK_ENABLE(); break;
-		case my_GPIOH: my_RCC_GPIOH_CLK_ENABLE(); break;
+		case my_GPIOA: my_RCC_GPIOA_CLK_ENABLE(); return OK;
+		case my_GPIOB: my_RCC_GPIOB_CLK_ENABLE(); return OK;
+		case my_GPIOC: my_RCC_GPIOC_CLK_ENABLE(); return OK;
+		case my_GPIOD: my_RCC_GPIOD_CLK_ENABLE(); return OK;
+		case my_GPIOE: my_RCC_GPIOE_CLK_ENABLE(); return OK;
+		case my_GPIOH: my_RCC_GPIOH_CLK_ENABLE(); return OK;
 		default: return INVALID_PORT;
 	}
 }
+
+/* Enable UARTs' Clock */
+static inline UART_Status_t enableUartClock(UART_Name_t uartName){
+	switch(uartName){
+		case my_UART1: my_RCC_USART1_CLK_ENABLE(); return UART_OK;
+		case my_UART2: my_RCC_USART2_CLK_ENABLE(); return UART_OK;
+		case my_UART6: my_RCC_USART6_CLK_ENABLE(); return UART_OK;
+		default: return UART_NOT_OK;
+	}
+}
+
+
 
 /*
  * @brief	Helper function to write bit to a specific uart's register
@@ -60,7 +63,7 @@ static inline General_Status_t enableGpioClock(GPIO_PortName_t port){
  * @param	regName
  * @param	value
  */
-static UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName, uint32_t value){
+UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName, uint32_t value){
 	volatile uartRegOffset_t* UARTx = uartBase(uartName);
 	if(UARTx == NULL) {return INVALID_UART; }
 
@@ -98,6 +101,8 @@ static UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_R
 	return UART_OK;
 }
 
+
+
 /*
  * @brief
  *
@@ -105,7 +110,7 @@ static UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_R
  * @param
  * @param
  */
-static int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName){
+int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName){
 	volatile uartRegOffset_t* UARTx = uartBase(uartName);
 	if(UARTx == NULL) return -1;
 
@@ -139,25 +144,46 @@ static int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_
  * Public API
  * ------------------------------------------------------------
  */
-static char rx_buffer[1];
 
-void UART1_DMA_Init(void){
+/*
+ * @brief	Set up DMA2-Stream2-Channel4 to move incoming UART1 RX bytes into a user-supplier buffer
+ *
+ * @param	rxBuffer	Pointer to the receive buffer (must be word-aligned if required by ur DMA)
+ * 						Its size must be programmed into NDTR before each reception.
+ *
+ * @routine:
+ * 		1. Enable DMA mode for reception in UART1 (UART_CR3)
+ * 		2. Enable DMA2 peripheral clock
+ * 		3. Programs DMA2 Stream 2 registers:
+ * 			PAR 	<- &UART1.DR (feed DR address)
+ * 			M0AR	<- rxBuffer	 (destination in RAM)
+ * 			NDTR	<- sizeof(buffer)	(number of bytes to receive)
+ * 			CR		<- channel 4 | 8bit | MINC | CIRC | TCIE | EN
+ * 		4. Enable the NVIC interrupt for DMA2_Stream2
+ */
+void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize){
+	writeUART(6, my_UART1, UART_CR3, SET); //Enable DMA for reception
 	/*
 	 * According to DMA2 request mapping
 	 * 		Choose Stream 2, channel 4 for UART1_RX
 	 */
-	my_RCC_DMA2_CLK_ENABLE(); //Enabling clock for dma
+	my_RCC_DMA2_CLK_ENABLE(); //Enabling clock for DMA2
 
 	/* Assign the address of sender which is UART_DR*/
+	writeDMA2(0, DMA_S2CR, RESET); //Disable stream before configuring
+
 	writeDMA2(0, DMA_S2PAR, (uint32_t)UART1_GET_REG(UART_DR)); //Write sender address to DMA_S2PAR
-	writeDMA2(0, DMA_S2M0AR, (uint32_t)rx_buffer); //Write receiver address to DMA_S2M0AR
-	writeDMA2(0, DMA_S2NDTR, sizeof(rx_buffer)); //Let DMA knows the size of the transfered package
-//	writeDMA2(0, DMA_S2NDTR, 1);
+	writeDMA2(0, DMA_S2M0AR, (uint32_t)rxBuffer); //Write receiver address to DMA_S2M0AR
+	writeDMA2(0, DMA_S2NDTR, bufferSize); //Let DMA knows the size of the transfered package
 
 	writeDMA2(25, DMA_S2CR, 0b100); //Select channel 4
 	writeDMA2(11, DMA_S2CR, 0b00); //Set data size is 8-bit
-	writeDMA2(10, DMA_S2CR, SET); //Set memory increment mode
 	writeDMA2(8, DMA_S2CR, SET); //Enable circular mode
+
+	if(bufferSize > 1){
+		writeDMA2(10, DMA_S2CR, SET); //Set memory increment mode
+	} else writeDMA2(10, DMA_S2CR, RESET); //No memory increment mode
+
 	writeDMA2(4, DMA_S2CR, SET); //Enable transfer complete interrupt
 	writeDMA2(0, DMA_S2CR, SET); //Enable Stream 2
 
@@ -165,26 +191,54 @@ void UART1_DMA_Init(void){
 }
 
 
-void DMA2_Stream2_IRQHandler(void){
-	char c = rx_buffer[0];
-	if(c == 'b'){
-		ledControl(LED_ORANGE, ON);
-		for(int i = 0; i < 2000000; i++);
-		ledControl(LED_ORANGE, OFF);
-	}
-	writeDMA2(21, DMA_LIFCR, SET); //Clear TCIF2
+void UART1_DMA_Transmitter_Init(char* txBuffer){
+	writeUART(7, my_UART1, UART_CR3, SET); //Enable DMA for transmission
+	/*
+	 * According to DMA2 request mapping
+	 * 		Choose Stream 7, channel 4 for UART1_TX
+	 */
+	my_RCC_DMA2_CLK_ENABLE(); //Enabling clock for DMA2
+
+	writeDMA2(0, DMA_S7CR, RESET); //Disable stream before configuring
+
+	/* Assign the address of sender which is UART_DR*/
+	writeDMA2(0, DMA_S7PAR, (uint32_t)UART1_GET_REG(UART_DR)); //Write sender address to DMA_S7PAR
+	writeDMA2(0, DMA_S7M0AR, (uint32_t)txBuffer); //Write receiver address to DMA_S7M0AR
+	writeDMA2(0, DMA_S7NDTR, sizeof(txBuffer)); //Let DMA knows the size of the transfered package
+
+	writeDMA2(25, DMA_S7CR, 0b100); //Select channel 4
+	writeDMA2(7, DMA_S7CR, 0b01); //Data transfer direction: memory to peripheral
+	writeDMA2(11, DMA_S7CR, 0b00); //Set data size is 8-bit
+	writeDMA2(10, DMA_S7CR, SET); //Set memory increment mode
+	writeDMA2(8, DMA_S7CR, SET); //Enable circular mode
+	writeDMA2(4, DMA_S7CR, SET); //Enable transfer complete interrupt
+	writeDMA2(0, DMA_S7CR, SET); //Enable Stream 7
+
+	NVIC_enableIRQ(DMA2_S7);
 }
 
 
-
+/*
+ * @brief	 High-level helper to configure UART peripheral and its GPIO pins.
+ *
+ * @param	TXPin		Logical GPIO pin used as UARTx_TX
+ * @param	RXPin		Logical GPIO pin used as UARTx_RX
+ * @param	portName	GPIO port hosting the pins (my_GPIOA)
+ * @param	uartName	Target UART peripheral (my_UART1)
+ * @param	baudRate	Desired baud rate in bit/s (e.g. 115200)
+ * @param	parity		PARITY_NONE, PARITY_EVEN, OR PARITY_ODD
+ * @param	wordLength	_8B_WORDLENGTH or _9B_WORDLENGTH
+ *
+ * @note	The function assumes SYSCLK_FREQ_100M is set to the current peripheral clock speed.
+ * 			Update this constant if the clock tree is changed
+ */
 void UART_Init(GPIO_Pin_t TXPin,
 			   GPIO_Pin_t RXPin,
 			   GPIO_PortName_t portName,
 			   UART_Name_t uartName,
 			   uint32_t baudRate,
 			   UART_Parity_t parity,
-			   UART_WordLength_t wordLength,
-			   Enable_DMA_t enableDMA){
+			   UART_WordLength_t wordLength){
 	/* Clock */
 	enableUartClock(uartName);
 	enableGpioClock(portName);
@@ -218,20 +272,14 @@ void UART_Init(GPIO_Pin_t TXPin,
 	int convert_divFraction = (int)(roundf(divFraction * 16.0f)); //scale and store divFraction in 4 bits
 	uint16_t fullBRR = (divMantissa << 4) | (convert_divFraction & 0xF);
 
-	/*
-	 * Write calculated full values to BRR
-	 */
+	/* Write Calculated full values to BRR */
 	writeUART(0, uartName, UART_BRR, fullBRR);
 
-	/*
-	 * Enable TX and RX mode
-	 */
+	/* Enable Tx and Rx */
 	writeUART(2, uartName, UART_CR1, 1); //Receiver is enabled and begins searching for a start bit
 	writeUART(3, uartName, UART_CR1, 1); //Transmitter enable
 
-	/*
-	 * Auto select parity control
-	 */
+	/* Parity Configuration	 */
 	if(parity == PARITY_NONE){
 		writeUART(10, uartName, UART_CR1, 0); //PCE = 0
 	}else{
@@ -244,9 +292,7 @@ void UART_Init(GPIO_Pin_t TXPin,
 		}
 	}
 
-	/*
-	 * Auto select the data frame size
-	 */
+	/* Word Length */
 	if (wordLength == _8B_WORDLENGTH){
 		writeUART(12, uartName, UART_CR1, 0); //Set data frame size as 8 bits
 	}else if (wordLength == _9B_WORDLENGTH) {
@@ -255,25 +301,11 @@ void UART_Init(GPIO_Pin_t TXPin,
 		return;
 	}
 
-	/*
-	 * Enable UART DMA
-	 */
-	if(enableDMA == ENABLE_DMA){
-//		writeUART(6, uartName, UART_CR3, SET); //DMA Enable Transmitter
-		writeUART(6, uartName, UART_CR3, SET);
-		UART1_DMA_Init(); //100 is data number/size
-	}
-
-	else if (enableDMA == DISABLE_DMA){
-		/*
-		 * Enable interrupt
-		 */
-		writeUART(5, my_UART1, UART_CR1, SET); //Receive interrupt enable
-		NVIC_enableIRQ(UART1); //Position 37 in vector table
-	}
-
+	writeUART(4, uartName, UART_CR1, SET); //Enable IDLE interrupt
 	writeUART(13, uartName, UART_CR1, 1); //Enable UART
+	NVIC_enableIRQ(UART1); //Position 37 in vector table
 }
+
 
 
 /*
@@ -291,6 +323,7 @@ void my_UART_Transmit(UART_Name_t UARTx, uint8_t inputData){
 	writeUART(0, UARTx, UART_DR, inputData & 0x1FF);
 	while((readUART(6, UARTx, UART_SR) & 1) == 0);
 }
+
 
 
 /*
@@ -328,6 +361,7 @@ int16_t my_UART_Receive(UART_Name_t uartName){
 	int16_t data = readUART(0, uartName, UART_DR);
 	return data;
 }
+
 
 
 /*

@@ -877,6 +877,7 @@ uint32_t readTimer(uint8_t bitPosition, TIM_Name_t userTIMx, TIM_RegName_t mode)
  */
 TIM_Cal_t timerCalculation(uint32_t sysClkFreq, uint32_t targetHz, uint32_t maxArr){
 	TIM_Cal_t output = {0};
+	TIM_Cal_t error;
 
 	uint32_t psc = (sysClkFreq / (targetHz * (maxArr + 1)));
 	if(psc > 0xFFFF) psc = 0xFFFF; //PSC is 16-bit on stm32
@@ -891,6 +892,7 @@ TIM_Cal_t timerCalculation(uint32_t sysClkFreq, uint32_t targetHz, uint32_t maxA
 			return output;
 		}
 	}
+	return error;
 }
 
 

@@ -241,7 +241,6 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		//------------------------------------------------//
-
 		case DMA_S1CR:
 			if(bitPosition == 6 || bitPosition == 11 ||
 			   bitPosition == 13 || bitPosition == 16 ||
@@ -275,7 +274,6 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		//------------------------------------------------//
-
 		case DMA_S2CR:
 			if(bitPosition == 6 || bitPosition == 11 ||
 			   bitPosition == 13 || bitPosition == 16 ||
@@ -341,6 +339,38 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			else if(bitPosition == 3) bitWidth = 3;
 			break;
 
+		//------------------------------------------------//
+		case DMA_S7CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S7NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S7PAR:
+			bitWidth = 31;
+			break;
+
+		case DMA_S7M0AR:
+			bitWidth = 31;
+			break;
+
+		case DMA_S7M1AR:
+			bitWidth = 31;
+			break;
+
+		case DMA_S7FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
 
 		//...
 

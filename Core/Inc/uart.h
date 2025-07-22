@@ -55,7 +55,8 @@ typedef enum{
 }UART_Status_t;
 
 typedef enum{
-	INVALID_PORT
+	INVALID_PORT,
+	OK
 }General_Status_t;
 
 typedef enum{
@@ -66,18 +67,22 @@ typedef enum{
 /*
  * Function Declaration
  */
+UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName, uint32_t value);
+int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName);
+
 void UART_Init(GPIO_Pin_t TXPin,
 			   GPIO_Pin_t RXPin,
 			   GPIO_PortName_t portName,
 			   UART_Name_t uartName,
 			   uint32_t baudRate,
 			   UART_Parity_t parity,
-			   UART_WordLength_t wordLength,
-			   Enable_DMA_t enableDMA);
+			   UART_WordLength_t wordLength);
 
 void my_UART_Transmit(UART_Name_t UARTx, uint8_t inputData);
 int16_t my_UART_Receive(UART_Name_t uartName);
-void UART1_DMA_Init(void);
+
+void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize);
+void UART1_DMA_Transmitter_Init(char* txBuffer);
 void uartPrintLog(UART_Name_t uartName, char* message);
 
 #endif /* INC_UART_H_ */
