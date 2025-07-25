@@ -134,6 +134,16 @@ SECTIONS
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
+  /*-----Constant lookup tables that must be readable while BSY----- */
+  .ram_data : ALIGN(4)
+  {
+  	_ram_data_start = .;
+  	*(.ram_data) 
+  	_ram_data_end = .;
+  } > RAM AT> FLASH
+  
+  _ram_data_loadaddr = LOADADDR(.ram_data);
+  
   /* Initialized data sections into "RAM" Ram type memory */
   .data :
   {

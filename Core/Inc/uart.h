@@ -20,6 +20,9 @@
 #include "exti.h"
 #include "led.h"
 
+#define UART_CR1_M (1U << 12)	//Wordlength 9Bit
+#define UART_CR1_PCE (1U << 10) //Parity Control Enable
+
 typedef enum{
 	UART_SR,
 	UART_DR,
@@ -68,7 +71,7 @@ typedef enum{
  * Function Declaration
  */
 UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName, uint32_t value);
-int16_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName);
+int32_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName);
 
 void UART_Init(GPIO_Pin_t TXPin,
 			   GPIO_Pin_t RXPin,
@@ -78,11 +81,12 @@ void UART_Init(GPIO_Pin_t TXPin,
 			   UART_Parity_t parity,
 			   UART_WordLength_t wordLength);
 
-void my_UART_Transmit(UART_Name_t UARTx, uint8_t inputData);
-int16_t my_UART_Receive(UART_Name_t uartName);
+void my_UART_Transmit(UART_Name_t UARTx, uint16_t inputData);
+int32_t my_UART_Receive(UART_Name_t uartName);
 
 void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize);
-void UART1_DMA_Transmitter_Init(char* txBuffer);
+void UART1_DMA_Transmitter_Init(void);
+void UART1_DMA_Transmitter_Start(char* txBuffer, uint32_t bufferSize);
 void uartPrintLog(UART_Name_t uartName, char* message);
-
+void uartPrintFloat(UART_Name_t uartName, float val, uint8_t decimals);
 #endif /* INC_UART_H_ */

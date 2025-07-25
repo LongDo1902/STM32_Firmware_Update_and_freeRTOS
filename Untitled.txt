@@ -222,6 +222,7 @@ void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize){
 	} else writeDMA2(10, DMA_S2CR, RESET); //No memory increment mode
 
 	writeDMA2(4, DMA_S2CR, SET); //Enable transfer complete interrupt
+	writeDMA2(3, DMA_S2CR, SET); //Enable half transfer interrupt
 	writeDMA2(0, DMA_S2CR, SET); //Enable Stream 2
 
 	NVIC_enableIRQ(DMA2_S2);
@@ -359,8 +360,7 @@ void UART_Init(GPIO_Pin_t TXPin,
 		return;
 	}
 
-//	writeUART(5, uartName, UART_CR1, SET); //Enable receive interrupt
-
+	writeUART(4, uartName, UART_CR1, SET); //Enable IDLE interrupt
 	writeUART(13, uartName, UART_CR1, 1); //Enable UART
 	NVIC_enableIRQ(UART1); //Position 37 in vector table
 }
@@ -467,3 +467,242 @@ void uartPrintFloat(UART_Name_t uartName, float val, uint8_t decimals){
 	snprintf(buf, sizeof buf, fmt, val);
 	uartPrintLog(uartName, buf);
 }
+
+
+--------------------------------------------------------------------
+
+/*
+ * UART.h
+ *
+ *  Created on: July 18, 2025
+ *      Author: dobao
+ */
+
+#ifndef INC_UART_H_
+#define INC_UART_H_
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+
+#include "stm32PeripheralAddr.h"
+#include "timer.h"
+#include "rcc.h"
+#include "gpioWriteRead.h"
+#include "dma.h"
+#include "exti.h"
+#include "led.h"
+
+#define UART_CR1_M (1U << 12)	//Wordlength 9Bit
+#define UART_CR1_PCE (1U << 10) //Parity Control Enable
+
+typedef enum{
+	UART_SR,
+	UART_DR,
+	UART_BRR,
+	UART_CR1,
+	UART_CR2,
+	UART_CR3,
+	UART_GTPR
+}UART_RegName_t;
+
+typedef enum{
+	my_UART1,
+	my_UART2,
+	my_UART6
+}UART_Name_t;
+
+typedef enum{
+	PARITY_NONE,
+	PARITY_EVEN,
+	PARITY_ODD
+}UART_Parity_t;
+
+typedef enum{
+	_8B_WORDLENGTH,
+	_9B_WORDLENGTH
+}UART_WordLength_t;
+
+typedef enum{
+	UART_OK,
+	UART_NOT_OK,
+	INVALID_UART,
+	INVALID_REG
+}UART_Status_t;
+
+typedef enum{
+	INVALID_PORT,
+	OK
+}General_Status_t;
+
+typedef enum{
+	DISABLE_DMA,
+	ENABLE_DMA
+}Enable_DMA_t;
+
+/*
+ * Function Declaration
+ */
+UART_Status_t writeUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName, uint32_t value);
+int32_t readUART(uint8_t bitPosition, UART_Name_t uartName, UART_RegName_t regName);
+
+void UART_Init(GPIO_Pin_t TXPin,
+			   GPIO_Pin_t RXPin,
+			   GPIO_PortName_t portName,
+			   UART_Name_t uartName,
+			   uint32_t baudRate,
+			   UART_Parity_t parity,
+			   UART_WordLength_t wordLength);
+
+void my_UART_Transmit(UART_Name_t UARTx, uint16_t inputData);
+int32_t my_UART_Receive(UART_Name_t uartName);
+
+void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize);
+void UART1_DMA_Transmitter_Init(void);
+void UART1_DMA_Transmitter_Start(char* txBuffer, uint32_t bufferSize);
+void uartPrintLog(UART_Name_t uartName, char* message);
+void uartPrintFloat(UART_Name_t uartName, float val, uint8_t decimals);
+#endif /* INC_UART_H_ */
+
+
+--------------------------------------------------------------------
+/*
+ * main.c
+ *
+ *  Created on: Jul 16, 2025
+ *      Author: dobao
+ */
+#include <string.h>
+#include <stdbool.h>
+
+#include "stm32PeripheralAddr.h"
+#include "rcc.h"
+#include "timer.h"
+#include "exti.h"
+#include "led.h"
+#include "uart.h"
+#include "dma.h"
+#include "adc.h"
+
+float temperatureVal = 0;
+int n = 0;
+
+char rxBuf[14]; //Change this to fit your initial message length
+void DMA2_Stream2_IRQHandler(void){
+
+	/* Clear all the flags */
+	writeDMA2(21, DMA_LIFCR, SET); //Clear transfer completed interrupt flag of stream 2
+	writeDMA2(20, DMA_LIFCR, SET); //Clear half transfer completed interrupt flag of stream 2
+	writeDMA2(19, DMA_LIFCR, SET); //Clear transfer error interrupt flag
+	writeDMA2(18, DMA_LIFCR, SET); //Clear direct mode error interrupt flag
+	writeDMA2(16, DMA_LIFCR, SET); //Clear FIFO error interrupt flag
+
+	if(strstr(rxBuf, "\n")){
+		/* Reset DMA to store a new buffer size */
+		if(strstr(rxBuf, "ORANGE LED ON")){
+			ledControl(LED_ORANGE, ON);
+		} else{
+			ledControl(LED_ORANGE, OFF);
+		}
+		memset(rxBuf, 0, sizeof(rxBuf)); //Reset all elements in the buffer
+	}
+}
+
+
+
+static volatile bool uartIdleIndicator = false;
+static volatile bool communicationIsFree = false;
+void USART1_IRQHandler(void){
+	if((readUART(4, my_UART1, UART_SR) & 1) == 1){
+		/* Clear the interrupt flag by reading SR and then DR */
+		readUART(0, my_UART1, UART_SR);
+		readUART(0, my_UART1, UART_DR);
+
+		uartIdleIndicator = true;
+		communicationIsFree = true;
+	}
+	memset(rxBuf, 0, sizeof(rxBuf));
+}
+
+
+static void uartPrintTemperature(UART_Name_t uartName, float temperatureVal, uint8_t decimals){
+	uartPrintLog(uartName, "STM32's Temperature: ");
+	uartPrintFloat(uartName, temperatureVal, decimals);
+	uartPrintLog(uartName, "\n");
+}
+
+
+
+static void clear_DMA2Stream7Flag(){
+	writeDMA2(27, DMA_HIFCR, SET); //Clear transfer completed interrupt flag of stream 7
+	writeDMA2(26, DMA_HIFCR, SET); //Clear half transfer completed interrupt flag of stream 7
+	writeDMA2(25, DMA_HIFCR, SET); //Clear transfer error interrupt flag
+	writeDMA2(24, DMA_HIFCR, SET); //Clear direct mode error interrupt flag
+	writeDMA2(22, DMA_HIFCR, SET); //Clear FIFO error interrupt flag
+}
+
+
+/*
+ * @brief
+ *
+ * @retval	Number of characters were written into buf, plus the automatic \0. No truncation happened
+ */
+static int convertFloatToString(char *destinationArray, uint8_t length, float val, uint8_t decimals){
+	if(decimals > 9) decimals = 9;
+	char fmt[] = "%.1f";
+	fmt[2] = '0' + decimals;
+	return snprintf(destinationArray, length, fmt, val);
+}
+
+char txBuf[7];
+void DMA2_Stream7_IRQHandler(void){
+	clear_DMA2Stream7Flag();
+	ledControl(LED_GREEN, ON);
+}
+
+int main(void){
+	RCC_init();
+	initTimer(my_TIM1); //100MHz, 1 tick per 0.001s
+
+	ledBlueInit();
+	ledOrangeInit();
+	ledRedInit();
+	ledGreenInit();
+
+	UART_Init(my_GPIO_PIN_6,
+			  my_GPIO_PIN_7,
+			  my_GPIOB,
+			  my_UART1,
+			  9600,
+			  PARITY_ODD,
+			  _9B_WORDLENGTH);
+
+	UART1_DMA_Receiver_Init(rxBuf, sizeof rxBuf);
+	UART1_DMA_Transmitter_Init();
+	ADC_temperatureSensorInit();
+
+	while(1){
+		ledControl(LED_BLUE, ON);
+		delay(100);
+		ledControl(LED_BLUE, OFF);
+		delay(100);
+
+		if(uartIdleIndicator == true){
+			uartIdleIndicator = false;
+			ledControl(LED_RED, ON);
+			delay(30);
+			ledControl(LED_RED, OFF);
+		}
+
+		temperatureVal = temperatureSensorRead();
+		n = convertFloatToString(txBuf, sizeof txBuf, temperatureVal, 2); //Convert float to string and store it to txBuf
+
+		UART1_DMA_Transmitter_Start(txBuf, sizeof txBuf);
+	}
+}
+
+//		uartPrintTemperature(my_UART1, temperatureSensorRead(), 2);
+
+
+
+

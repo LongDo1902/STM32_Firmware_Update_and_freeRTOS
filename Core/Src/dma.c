@@ -2,6 +2,9 @@
  * dma.c
  *
  *  Created on: Jul 18, 2025
+ *  Updated on: Jul 23, 2025
+ *  	Bug fixed
+ *  	More efficient execution
  *      Author: dobao
  */
 
@@ -74,6 +77,8 @@ static volatile uint32_t* const dma2RegLookupTable[DMA_REG_COUNT] = {
 		[DMA_S7FCR] 	= DMA2_GET_REG(DMA_S7FCR),
 };
 
+
+
 static volatile uint32_t* const dma1RegLookupTable[DMA_REG_COUNT] = {
 		[DMA_LISR] 	= DMA1_GET_REG(DMA_LISR),
 		[DMA_HISR] 	= DMA1_GET_REG(DMA_HISR),
@@ -137,6 +142,8 @@ static volatile uint32_t* const dma1RegLookupTable[DMA_REG_COUNT] = {
 		[DMA_S7FCR] 	= DMA1_GET_REG(DMA_S7FCR),
 };
 
+
+
 /*
  * @brief	Generic masked write helper
  * @param	reg		Pointers to the register
@@ -145,21 +152,28 @@ static volatile uint32_t* const dma1RegLookupTable[DMA_REG_COUNT] = {
  * @param	value			Field value (must fit in @p bitWidth)
  */
 static void writeDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth, uint32_t value){
-	/*
-	 * The function leaves the register unchanged if
-	 * 		@p	bitWidth is 32 (shifting by 32 is undefined)
-	 * 		@p 	value is too large for the field
-	 * 		The field would spill past bit 31
-	 */
-	if(bitWidth >= 32) return; //Prevent undefined behavior: 32-bit shift is invalid on 32-bit targets
-	if(value > (1U << bitWidth)) return; //I think this is incorrect
+	if(bitWidth > 32) return; //Prevent undefined behavior: 32-bit shift is invalid on 32-bit targets
 	if((bitWidth + bitPosition) > 32) return; //Prevent writing beyong 32-bit reg boundary
 
+	/* Reject out of range value */
+	if(bitWidth < 32){
+		uint32_t maxVal = (1U << bitWidth) - 1U;
+		if(value > maxVal) return;
+	}
+
+	if(bitWidth == 32 && bitPosition == 0){
+		*reg = value;
+		return;
+	}
+
+	/* Other general cases */
 	//Mask off the old bit and or with new bit
 	uint32_t mask = ((1U << bitWidth) - 1U) << bitPosition;
 	uint32_t shiftedValue = (value << bitPosition) & mask;
 	*reg = (*reg & ~mask) | shiftedValue;
 }
+
+
 
 /*
  * @brief	Read a field of 'bitWidth' bits from a register starting at 'bitPosition'
@@ -170,13 +184,25 @@ static void writeDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bi
  *
  * @return	Extracted value
  */
-static uint32_t readDMABits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth){
-	if(bitWidth == 31){
-		return (*reg >> bitPosition); //Full-word; no mask needed
+static inline uint32_t readDMABits(const volatile uint32_t* reg,
+								   uint8_t bitPosition,
+								   uint8_t bitWidth){
+	uint32_t ERROR = 0xFFFFFFFFU;
+
+	/* Sanity Check */
+	if(bitWidth == 0 || bitWidth > 32)	return ERROR;
+	if(bitPosition > 31)				return ERROR;
+	if(bitPosition + bitWidth > 32)		return ERROR;
+
+	if(bitWidth == 32 && bitPosition == 0){
+		return *reg; //Full-word; no mask needed
 	}
+
 	uint32_t mask = (1U << bitWidth) - 1U;
 	return (*reg >> bitPosition) & mask;
 }
+
+
 
 /*
  * @brief	Write a bit-field inside an DMAx register
@@ -224,15 +250,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S0PAR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S0M0AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S0M1AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S0FCR:
@@ -257,15 +283,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S1PAR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S1M0AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S1M1AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S1FCR:
@@ -290,15 +316,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S2PAR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S2M0AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S2M1AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S2FCR:
@@ -323,15 +349,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S3PAR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S3M0AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S3M1AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S3FCR:
@@ -356,15 +382,15 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 			break;
 
 		case DMA_S7PAR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S7M0AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S7M1AR:
-			bitWidth = 31;
+			bitWidth = 32;
 			break;
 
 		case DMA_S7FCR:
@@ -380,6 +406,8 @@ void writeDMA2(uint8_t bitPosition, DMA_RegName_t regName, uint32_t value){
 	volatile uint32_t* reg = dma2RegLookupTable[regName];
 	writeDMABits(reg, bitPosition, bitWidth, value);
 }
+
+
 
 /*
  * @brief	Read a bit-field from an DMA2 peripheral register
@@ -544,7 +572,39 @@ uint32_t readDMA2(uint8_t bitPosition, DMA_RegName_t regName){
 			else if(bitPosition == 3) bitWidth = 3;
 			break;
 
-			//...
+		//------------------------------------------------//
+		case DMA_S7CR:
+			if(bitPosition == 6 || bitPosition == 11 ||
+			   bitPosition == 13 || bitPosition == 16 ||
+			   bitPosition == 21 || bitPosition == 23){
+				bitWidth = 2;
+			}
+			else if(bitPosition == 25){
+				bitWidth = 3;
+			}
+			break;
+
+		case DMA_S7NDTR:
+			bitWidth = 16;
+			break;
+
+		case DMA_S7PAR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S7M0AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S7M1AR:
+			bitWidth = 32;
+			break;
+
+		case DMA_S7FCR:
+			if(bitPosition == 0) bitWidth = 2;
+			else if(bitPosition == 3) bitWidth = 3;
+			break;
+		//...
 
 		default: return ERROR;
 	}

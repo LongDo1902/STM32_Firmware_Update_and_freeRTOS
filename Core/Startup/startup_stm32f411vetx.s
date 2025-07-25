@@ -80,6 +80,22 @@ LoopCopyDataInit:
   cmp r4, r1
   bcc CopyDataInit
   
+/* -------- Copy .ram_data from FLASH to SRAM ------------------------ */
+    ldr   r0, =_ram_data_loadaddr   /* r0 = src  (FLASH) */
+    ldr   r1, =_ram_data_start      /* r1 = dest (RAM)   */
+    ldr   r2, =_ram_data_end        /* r2 = limit (RAM)  */
+
+CopyRamDataLoop:
+    cmp   r1, r2                    /* finished when dest >= end */
+    bcs   EndCopyRamData            /* exit if complete          */
+
+    ldr   r3, [r0], #4              /* *dest++ = *src++ (word)   */
+    str   r3, [r1], #4
+    b     CopyRamDataLoop
+
+EndCopyRamData:
+/* ------------------------------------------------------------------ */
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -435,4 +451,4 @@ g_pfnVectors:
    .thumb_set SPI4_IRQHandler,Default_Handler
 
    .weak      SPI5_IRQHandler                  
-   .thumb_set SPI5_IRQHandler,Default_Handler    
+   .thumb_set SPI5_IRQHandler,Default_Handler

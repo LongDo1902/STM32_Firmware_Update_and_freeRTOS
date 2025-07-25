@@ -652,7 +652,7 @@ void RCC_init(void){
 		if(++t > PLLRDY_TIMEOUT) return;
 	}
 
-	writeFlash(0, FLASH_ACR, 0x03); //3WS (90MHz < HCLK < 100MHz) (2.7V to 3.6V)
+	writeFLASH(0, FLASH_ACR, 0x03); //3WS (90MHz < HCLK < 100MHz) (2.7V to 3.6V)
 
 	/*
 	 * Select PLL as the system clock
