@@ -20,7 +20,7 @@
 
 float temperatureVal = 0;
 
-char* rxBuf[22032];
+char rxBuf[22032];
 bool updateFirmware = false;
 void DMA2_Stream2_IRQHandler(void){
 	/* Clear all the flags */

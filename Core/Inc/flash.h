@@ -15,7 +15,6 @@
 #include "stm32PeripheralAddr.h"
 
 #define RAMFUNC __attribute__((section(".RamFunc")))
-#define RAMDATA __attribute__((section(".ram_data")))
 
 typedef struct{
 	volatile uint32_t* SECTOR0;

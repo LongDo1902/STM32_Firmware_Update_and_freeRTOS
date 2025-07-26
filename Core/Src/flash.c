@@ -10,7 +10,7 @@
 
 #include "flash.h"
 
-RAMDATA const sectorAddr_t flashSectors = {
+const sectorAddr_t flashSectors = {
 		(volatile uint32_t*) 0x08000000U,
 		(volatile uint32_t*) 0x08004000U,
 		(volatile uint32_t*) 0x08008000U,
@@ -27,7 +27,7 @@ RAMDATA const sectorAddr_t flashSectors = {
  *
  * @note	'const keeps the table in Flash'; registers themselve stay 'volatile' because the hardware can change them anytime
  */
-RAMDATA volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
+volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
 		[FLASH_ACR] 	= FLASH_GET_REG(FLASH_ACR),
 		[FLASH_KEYR] 	= FLASH_GET_REG(FLASH_KEYR),
 		[FLASH_OPTKEYR]	= FLASH_GET_REG(FLASH_OPTKEYR),
@@ -42,7 +42,7 @@ RAMDATA volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
  * @brief	A lookup table of **valid-bit masks** for every FLASH register
  * 			The array is indexed by 'FLASH_REG_COUNT'
  */
-RAMDATA const uint32_t FLASH_VALID_BIT[FLASH_REG_COUNT] = {
+const uint32_t FLASH_VALID_BIT[FLASH_REG_COUNT] = {
 		[FLASH_ACR] = ~((0xFu << 4) | 0xFFFFE000u), //These bits are reserved
 		[FLASH_KEYR] = 0xFFFFFFFFu,
 		[FLASH_OPTKEYR] = 0xFFFFFFFFu,
