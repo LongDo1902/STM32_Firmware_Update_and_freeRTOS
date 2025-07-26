@@ -85,6 +85,8 @@ void my_UART_Transmit(UART_Name_t UARTx, uint16_t inputData);
 int32_t my_UART_Receive(UART_Name_t uartName);
 
 void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize);
+void UART1_DMA_Receiver_Start();
+
 void UART1_DMA_Transmitter_Init(void);
 void UART1_DMA_Transmitter_Start(char* txBuffer, uint32_t bufferSize);
 void uartPrintLog(UART_Name_t uartName, char* message);

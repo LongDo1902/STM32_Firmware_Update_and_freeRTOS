@@ -17,62 +17,72 @@
 #include "adc.h"
 #include "flash.h"
 
-
-float temperatureVal = 0;
-
+/* ------------------------------------------------------------------------------------ */
 char rxBuf[17992];
-bool updateFirmware = false;
+volatile bool updateFirmware = false;
 void DMA2_Stream2_IRQHandler(void){
 	/* Clear all the flags */
 	writeDMA2(21, DMA_LIFCR, SET); //Clear transfer completed interrupt flag of stream 2
 	updateFirmware = true;
 }
 
-//static volatile bool rxIndicator = false;
-//
-//char rxMessage[25];
-//int idx = 0;
-//void USART1_IRQHandler(void){
-//	if((readUART(5, my_UART1, UART_SR) & 1) == 1){
-//		rxIndicator = true;
-//	}
-//
-//	/*
-//	 * @note	my_UART_Receive clears interrupt itself because:
-//	 * 				In this function, it reads SR then DR
-//	 */
-//	rxMessage[idx++] = my_UART_Receive(my_UART1);
-//
-//	if(strstr(rxMessage, "\n")){
-//		if(strstr(rxMessage, "orange led on")){
-//			ledControl(LED_ORANGE, ON);
-//			uartPrintLog(my_UART1, "--> ORANGE LED ON\n");
-//		}
-//		else if(strstr(rxMessage, "orange led off")){
-//			ledControl(LED_ORANGE, OFF);
-//			uartPrintLog(my_UART1, "--> ORANGE LED OFF\n");
-//		}
-//		else{
-//			uartPrintLog(my_UART1, "--> COMMAND NOT FOUND\n");
-//		}
-//		memset(rxMessage, 0, sizeof rxMessage);
-//		idx = 0;
-//	}
-//}
 
 
-//static void uartPrintTemperature(UART_Name_t uartName, float temperatureVal, uint8_t decimals){
-//	ledControl(LED_GREEN, ON);
-//
-//	uartPrintLog(uartName, "\n");
-//	uartPrintLog(uartName, "STM32's Temperature: ");
-//	uartPrintFloat(uartName, temperatureVal, decimals);
-//	uartPrintLog(uartName, "*C");
-//
-//	ledControl(LED_GREEN, OFF);
-//}
+/*------------------------------------------------------------ */
+static volatile bool rxIndicator = false;
+char rxMessage[25];
+int idx = 0;
+void USART1_IRQHandler(void){
+	if((readUART(5, my_UART1, UART_SR) & 1) == 1){
+		rxIndicator = true;
+	}
+
+	/*
+	 * @note	my_UART_Receive clears interrupt itself because:
+	 * 				In this function, it reads SR then DR
+	 */
+	rxMessage[idx++] = my_UART_Receive(my_UART1);
+
+	if(strstr(rxMessage, "\n")){
+		if(strstr(rxMessage, "Orange led on")){
+			ledControl(LED_ORANGE, ON);
+			uartPrintLog(my_UART1, "--> ORANGE LED ON\n");
+		}
+		else if(strstr(rxMessage, "Orange led off")){
+			ledControl(LED_ORANGE, OFF);
+			uartPrintLog(my_UART1, "--> ORANGE LED OFF\n");
+		}
+		else if(strstr(rxMessage, "Update firmware")){
+			writeUART(5, my_UART1, UART_CR1, RESET); //Clear RXNEIE
+			UART1_DMA_Receiver_Init(rxBuf, sizeof rxBuf);
+			uartPrintLog(my_UART1, "--> UPDATING FIRMWARE");
+		}
+		else{
+			uartPrintLog(my_UART1, "--> COMMAND NOT FOUND\n");
+		}
+		memset(rxMessage, 0, sizeof rxMessage);
+		idx = 0;
+	}
+}
 
 
+
+/* ------------------------------------------------------------------------------------ */
+static void uartPrintTemperature(UART_Name_t uartName, float temperatureVal, uint8_t decimals){
+	ledControl(LED_GREEN, ON);
+
+	uartPrintLog(uartName, "\n");
+	uartPrintLog(uartName, "STM32's Temperature: ");
+	uartPrintFloat(uartName, temperatureVal, decimals);
+	uartPrintLog(uartName, "*C");
+
+	ledControl(LED_GREEN, OFF);
+}
+
+
+
+/* ------------------------------------------------------------------------------------ */
+float temperatureVal = 0;
 int main(void){
 	RCC_init();
 	initTimer(my_TIM1); //100MHz, 1 tick per 0.001s
@@ -89,18 +99,13 @@ int main(void){
 			  9600,
 			  PARITY_ODD,
 			  _9B_WORDLENGTH);
-
-//	ADC_temperatureSensorInit();
-	UART1_DMA_Receiver_Init(rxBuf, sizeof rxBuf);
+	ADC_temperatureSensorInit();
 
 	while(1){
-
-//		if(rxIndicator == true){
-//			rxIndicator = false;
-//			ledControl(LED_RED, ON);
-//			delay(30);
-//			ledControl(LED_RED, OFF);
-//		}
+		ledControl(LED_GREEN, ON);
+		delay(100);
+		ledControl(LED_GREEN, OFF);
+		delay(100);
 
 		if(updateFirmware == true){
 			/* Toggle leds 3 times showing uploading process is successful */
@@ -111,28 +116,17 @@ int main(void){
 					ledControl(LED_BLUE, OFF);
 					delay(50);
 				}
-				delay(600);
+				delay(500);
 			}
 
 			writeDMA2(0, DMA_S2CR, RESET); //Disable DMA2 Stream 2
+			while((readDMA2(0, DMA_S2CR) & 1) == 1); //Wait for DMA2 Stream 2 is truly turned off
 			__asm("cpsid i");
 			firmwareUpdate(rxBuf, sizeof rxBuf);
 		}
-//		temperatureVal = temperatureSensorRead();
-//		uartPrintTemperature(my_UART1, temperatureVal, 2);
+
+		delay(500);
+		temperatureVal = temperatureSensorRead();
+		uartPrintTemperature(my_UART1, temperatureVal, 2);
 	}
 }
-
-
-
-///*
-// * @brief
-// *
-// * @retval	Number of characters were written into buf, plus the automatic \0. No truncation happened
-// */
-//static int convertFloatToString(char *destinationArray, uint8_t length, float val, uint8_t decimals){
-//	if(decimals > 9) decimals = 9;
-//	char fmt[] = "%.1f";
-//	fmt[2] = '0' + decimals;
-//	return snprintf(destinationArray, length, fmt, val);
-//}

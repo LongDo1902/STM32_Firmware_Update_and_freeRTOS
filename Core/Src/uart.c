@@ -222,8 +222,13 @@ void UART1_DMA_Receiver_Init(char *rxBuffer, uint32_t bufferSize){
 	} else writeDMA2(10, DMA_S2CR, RESET); //No memory increment mode
 
 	writeDMA2(4, DMA_S2CR, SET); //Enable transfer complete interrupt
-	writeDMA2(0, DMA_S2CR, SET); //Enable Stream 2
 
+	UART1_DMA_Receiver_Start();
+}
+
+
+void UART1_DMA_Receiver_Start(){
+	writeDMA2(0, DMA_S2CR, SET); //Enable Stream 2
 	NVIC_enableIRQ(DMA2_S2);
 }
 
@@ -359,8 +364,7 @@ void UART_Init(GPIO_Pin_t TXPin,
 		return;
 	}
 
-//	writeUART(5, uartName, UART_CR1, SET); //Enable receive interrupt
-
+	writeUART(5, uartName, UART_CR1, SET); //Enable receive interrupt
 	writeUART(13, uartName, UART_CR1, 1); //Enable UART
 	NVIC_enableIRQ(UART1); //Position 37 in vector table
 }
