@@ -130,7 +130,7 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >FLASH
-
+  
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
@@ -143,6 +143,8 @@ SECTIONS
     *(.data*)          /* .data* sections */
     *(.RamFunc)        /* .RamFunc sections */
     *(.RamFunc*)       /* .RamFunc* sections */
+    *(.RamConst)	   /* .RamConst sections */
+    *(.RamConst*)	   /* .RamConst* sections */
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */

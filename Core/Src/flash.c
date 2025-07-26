@@ -10,7 +10,7 @@
 
 #include "flash.h"
 
-const sectorAddr_t flashSectors = {
+__attribute__ ((section(".RamConst")))const sectorAddr_t flashSectors = {
 		(volatile uint32_t*) 0x08000000U,
 		(volatile uint32_t*) 0x08004000U,
 		(volatile uint32_t*) 0x08008000U,
@@ -27,7 +27,7 @@ const sectorAddr_t flashSectors = {
  *
  * @note	'const keeps the table in Flash'; registers themselve stay 'volatile' because the hardware can change them anytime
  */
-volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
+__attribute__((section(".RamConst")))volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
 		[FLASH_ACR] 	= FLASH_GET_REG(FLASH_ACR),
 		[FLASH_KEYR] 	= FLASH_GET_REG(FLASH_KEYR),
 		[FLASH_OPTKEYR]	= FLASH_GET_REG(FLASH_OPTKEYR),
@@ -42,7 +42,7 @@ volatile uint32_t* const flashRegLookupTable[FLASH_REG_COUNT] = {
  * @brief	A lookup table of **valid-bit masks** for every FLASH register
  * 			The array is indexed by 'FLASH_REG_COUNT'
  */
-const uint32_t FLASH_VALID_BIT[FLASH_REG_COUNT] = {
+__attribute__((section(".RamConst")))const uint32_t FLASH_VALID_BIT[FLASH_REG_COUNT] = {
 		[FLASH_ACR] = ~((0xFu << 4) | 0xFFFFE000u), //These bits are reserved
 		[FLASH_KEYR] = 0xFFFFFFFFu,
 		[FLASH_OPTKEYR] = 0xFFFFFFFFu,
@@ -62,12 +62,12 @@ const uint32_t FLASH_VALID_BIT[FLASH_REG_COUNT] = {
  * @retval	true			Bit is valid
  * 			false			Bit is reserved or inputs are out of range
  */
-__attribute__((section(".RamFunc")))static inline bool isValidFlashBit(uint8_t bitPosition, Flash_RegName_t mode){
+RAMFUNC static inline bool isValidFlashBit(uint8_t bitPosition, Flash_RegName_t mode){
 	return ((mode < FLASH_REG_COUNT && bitPosition < 32) && (FLASH_VALID_BIT[mode] >> bitPosition) & 0x01);
 }
 
 
-__attribute__((section(".RamFunc")))static void writeFLASHBits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth, uint32_t value){
+RAMFUNC static void writeFLASHBits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth, uint32_t value){
 	if((bitWidth > 32) || (bitWidth + bitPosition) > 32) return;
 
 	/* Reject out of range value	 */
@@ -85,7 +85,7 @@ __attribute__((section(".RamFunc")))static void writeFLASHBits(volatile uint32_t
 }
 
 
-__attribute__((section(".RamFunc")))static uint32_t readFLASHBits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth){
+RAMFUNC static uint32_t readFLASHBits(volatile uint32_t* reg, uint8_t bitPosition, uint8_t bitWidth){
 	uint32_t ERROR = 0xFFFFFFFFU;
 
 	/* Sanity Check */
@@ -112,7 +112,7 @@ __attribute__((section(".RamFunc")))static uint32_t readFLASHBits(volatile uint3
  *
  * @param
  */
-__attribute__((section(".RamFunc"))) void FLASH_Sector_Erase(uint8_t sector){
+RAMFUNC void FLASH_Sector_Erase(uint8_t sector){
 	while((readFLASH(16, FLASH_SR) & 1) == 1); //Wait until there is no Flash memory operation in progress
 	if((readFLASH(31, FLASH_CR) & 1) == 1){ //Check if the FLASH is locked
 		/* Unlock the FLASH by writing these sequences */
@@ -125,10 +125,6 @@ __attribute__((section(".RamFunc"))) void FLASH_Sector_Erase(uint8_t sector){
 	while((readFLASH(16, FLASH_SR) & 1) == 1); //Wait for BUSY bit to be cleared
 }
 
-__attribute__((section(".RamFunc")))void FLASH_Mass_Erase(){
-
-}
-
 
 
 /*
@@ -138,7 +134,7 @@ __attribute__((section(".RamFunc")))void FLASH_Mass_Erase(){
  * @param
  * @param
  */
-__attribute__((section(".RamFunc")))void FLASH_Programming(volatile uint8_t* flashDest, uint8_t* programBuf, int bufSize){
+RAMFUNC void FLASH_Programming(volatile uint8_t* flashDest, uint8_t* programBuf, int bufSize){
 	while((readFLASH(16, FLASH_SR) & 1) == 1); //Wait untio there is no Flash memory operation in progress
 	if((readFLASH(31, FLASH_CR) & 1) == 1){ //Check if the FLASH is locked
 		/* Unlock the FLASH by writing these sequences */
@@ -164,7 +160,7 @@ __attribute__((section(".RamFunc")))void FLASH_Programming(volatile uint8_t* fla
  * @param
  * @param
  */
-__attribute__((section(".RamFunc")))void firmwareUpdate(uint8_t* programBuf, int bufSize){
+RAMFUNC void firmwareUpdate(uint8_t* programBuf, int bufSize){
 	/* Erase sector 0 */
 	if(bufSize < 16000){
 		FLASH_Sector_Erase(0);
@@ -189,7 +185,7 @@ __attribute__((section(".RamFunc")))void firmwareUpdate(uint8_t* programBuf, int
 }
 
 
-uint32_t readFLASH(uint8_t bitPosition, Flash_RegName_t regName){
+__attribute__((section(".RamFunc"))) uint32_t readFLASH(uint8_t bitPosition, Flash_RegName_t regName){
 	uint32_t ERROR = 0xFFFFFFFFU;
 	uint8_t bitWidth = 1;
 
@@ -239,7 +235,7 @@ uint32_t readFLASH(uint8_t bitPosition, Flash_RegName_t regName){
  * @param	mode			Which Flash register to access (see Flash_Name_t)
  * @param	value			New value to write into the field.
  */
-void writeFLASH(uint8_t bitPosition, Flash_RegName_t regName, uint32_t value){
+RAMFUNC void writeFLASH(uint8_t bitPosition, Flash_RegName_t regName, uint32_t value){
 	/* Sanity Checks*/
 	if(bitPosition > 31) return;
 	if(!isValidFlashBit(bitPosition, regName)) return;

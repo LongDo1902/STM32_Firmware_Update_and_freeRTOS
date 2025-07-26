@@ -15,12 +15,12 @@
 #include "uart.h"
 #include "dma.h"
 #include "adc.h"
-//#include "flash.h"
+#include "flash.h"
 
 
 float temperatureVal = 0;
 
-char rxBuf[22032];
+char rxBuf[17992];
 bool updateFirmware = false;
 void DMA2_Stream2_IRQHandler(void){
 	/* Clear all the flags */
@@ -94,10 +94,6 @@ int main(void){
 	UART1_DMA_Receiver_Init(rxBuf, sizeof rxBuf);
 
 	while(1){
-		ledControl(LED_BLUE, ON);
-		delay(100);
-		ledControl(LED_BLUE, OFF);
-		delay(100);
 
 //		if(rxIndicator == true){
 //			rxIndicator = false;
@@ -105,12 +101,23 @@ int main(void){
 //			delay(30);
 //			ledControl(LED_RED, OFF);
 //		}
-//
+
 		if(updateFirmware == true){
+			/* Toggle leds 3 times showing uploading process is successful */
+			for(uint8_t j = 0; j < 3; j++){
+				for(uint8_t i = 0; i < 2; i++){
+					ledControl(LED_BLUE, ON);
+					delay(150);
+					ledControl(LED_BLUE, OFF);
+					delay(50);
+				}
+				delay(600);
+			}
+
+			writeDMA2(0, DMA_S2CR, RESET); //Disable DMA2 Stream 2
 			__asm("cpsid i");
 			firmwareUpdate(rxBuf, sizeof rxBuf);
 		}
-//
 //		temperatureVal = temperatureSensorRead();
 //		uartPrintTemperature(my_UART1, temperatureVal, 2);
 	}
